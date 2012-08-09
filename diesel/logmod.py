@@ -46,15 +46,19 @@ class Logger(object):
         if type(fd) not in (list, tuple):
             fd = [fd]
         self.fdlist = list(fd)
+        self.time = (lambda : time.asctime())
         if callable(verbosity):
             verbosity = log_method_to_level(verbosity)
         self.level = verbosity
         self.component = None
 
+    def set_utc(self):
+        self.time = (lambda : time.asctime(time.gmtime()))
+
     # The actual message logging functions
     def _writelogline(self, lvl, message):
         if lvl >= self.level:
-            final_out = '[%s] {%s%s} %s\n' % (time.asctime(), 
+            final_out = '[%s] {%s%s} %s\n' % (self.time, 
             self.component and ('%s:' % self.component) or '',
             _lvl_text[lvl],
             message)
