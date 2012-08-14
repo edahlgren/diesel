@@ -40,17 +40,23 @@ class Logger(object):
     Optionally, override the global verbosity to be more or less verbose
     than LOGLVL_WARN.
     '''
-    def __init__(self, fd=None, verbosity=LOGLVL_WARN):
+    def __init__(self, fd=None, timetype=None, verbosity=LOGLVL_WARN):
         if fd is None:
             fd = [sys.stderr]
         if type(fd) not in (list, tuple):
             fd = [fd]
         self.fdlist = list(fd)
-        self.time = (lambda : time.asctime())
+        if timetype is None or timetype is 'local':
+            self.set_local()
+        if timetype is 'utc':
+            self.set_utc()
         if callable(verbosity):
             verbosity = log_method_to_level(verbosity)
         self.level = verbosity
         self.component = None
+
+    def set_local(self):
+        self.time = (lambda : time.asctime())
 
     def set_utc(self):
         self.time = (lambda : time.asctime(time.gmtime()))
@@ -58,7 +64,7 @@ class Logger(object):
     # The actual message logging functions
     def _writelogline(self, lvl, message):
         if lvl >= self.level:
-            final_out = '[%s] {%s%s} %s\n' % (self.time, 
+            final_out = '[%s] {%s%s} %s\n' % (self.time(), 
             self.component and ('%s:' % self.component) or '',
             _lvl_text[lvl],
             message)
@@ -91,14 +97,14 @@ class Logger(object):
         else:
             return self._writelogline(LOGLVL_ERR, traceback.format_exc())
 
-    def sublog(self, component, verbosity=None):
+    def sublog(self, component, timetype=None, verbosity=None):
         '''Clone this logger and create a sublogger within the context
         of `component`, and with the provided `verbosity`.
 
         The same file object list will be used as the logging
         location.
         '''
-        copy = Logger(verbosity=verbosity or self.level)
+        copy = Logger(timetype=timetype, verbosity=verbosity or self.level)
         copy.fdlist = self.fdlist
         copy.component = component
         return copy
