@@ -153,7 +153,7 @@ def identity(cb): return cb
 ids = itertools.count(1)
 
 class Loop(object):
-    def __init__(self, loop_callable, track=False, *args, **kw):
+    def __init__(self, loop_callable, *args, **kw):
         self.loop_callable = loop_callable
         self.loop_label = str(self.loop_callable)
         self.args = args
@@ -168,8 +168,8 @@ class Loop(object):
         self.reset()
         self._clock = 0.0
         self.clock = 0.0
-        self.tracked = track
-        self.dispatch = self._dispatch_track if self.tracked else self._dispatch
+        self.tracked = False
+        self.dispatch = self._dispatch
 
     def reset(self):
         self.running = False
@@ -249,12 +249,12 @@ class Loop(object):
     def fork(self, make_child, f, *args, **kw):
         def wrap():
             return f(*args, **kw)
-        l = Loop(wrap, track=self.tracked)
+        l = Loop(wrap)
         if make_child:
             self.children.add(l)
             l.parent = self
         l.loop_label = str(f)
-        self.app.add_loop(l)
+        self.app.add_loop(l, track=self.tracked)
         return l
 
     def parent_died(self):
